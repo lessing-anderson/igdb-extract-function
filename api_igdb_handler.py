@@ -4,15 +4,13 @@ import requests
 import datetime
 import time
 import logging
-import shutil
 
 class ApiIGDBHandler:
 
-    def __init__(self, client_id, client_secret, storage_path) -> None:
+    def __init__(self, client_id, client_secret) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
         self.token = self.get_twitch_token()
-        self.storage_path = storage_path
 
         self.base_url = 'https://api.igdb.com/v4/{sufix}'
 
@@ -55,28 +53,24 @@ class ApiIGDBHandler:
                     logging.info("Número máximo de tentativas atingido. Falha na operação.")
                     raise
     
-    def save_data_tmp(self, data, sufix):
+    def save_data_tmp(self, sufix, exec_uuid, data):
 
         name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S.%f")
 
-        logging.info(f'Salvando em /tmp/{sufix}/{name}.json')
+        logging.info(f'Salvando em /tmp/{sufix}/{exec_uuid}/{name}.json')
 
-        os.makedirs(f'/tmp/{sufix}', exist_ok=True)
-        with open(f'/tmp/{sufix}/{name}.json', 'w') as open_file:
+        os.makedirs(f'/tmp/{sufix}/{exec_uuid}', exist_ok=True)
+        with open(f'/tmp/{sufix}/{exec_uuid}/{name}.json', 'w') as open_file:
             json.dump(data, open_file)
         return True
 
-    def get_and_save_tmp(self, sufix, body):
+    def get_and_save_tmp(self, sufix, exec_uuid, body):
         data = self.get_data(sufix, body)
-        self.save_data_tmp(data, sufix)
+        self.save_data_tmp(sufix, exec_uuid, data)
         return data
-    
-    def send_to_storage(self, sufix):
-        return True
 
-    def process(self, sufix, extract_type, delta_days=1):
+    def process(self, sufix, exec_uuid, extract_type, delta_days=1):
         offset = 0
-        shutil.rmtree(f'/tmp/{sufix}', ignore_errors=True)
 
         if extract_type == 'full':
             logging.info("Iniciando loop extração full...")
@@ -87,7 +81,7 @@ class ApiIGDBHandler:
                     offset {offset};
                     sort updated_at asc;"""
                 logging.info("Obtendo dados...")
-                data = self.get_and_save_tmp(sufix, body)
+                data = self.get_and_save_tmp(sufix, exec_uuid, body)
 
                 if len(data) < 500:
                     logging.info("Finalizando loop... ")
@@ -109,7 +103,7 @@ class ApiIGDBHandler:
                     where updated_at >= {delta_timestamp};
                     sort updated_at asc;"""
                 logging.info("Obtendo dados...")
-                data = self.get_and_save_tmp(sufix, body)
+                data = self.get_and_save_tmp(sufix, exec_uuid, body)
 
                 if len(data) < 500:
                     logging.info("Finalizando loop... ")
