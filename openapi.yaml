@@ -6,7 +6,7 @@ info:
   contact:
     name: API Support
     url: https://github.com/lessing-anderson
-    email: lessing.anderson@
+    email: lessing.anderson@gmail.com
 servers:
   - url: http://localhost:7071
     description: Local server
