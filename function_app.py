@@ -8,7 +8,7 @@ from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
 from api_igdb_handler import ApiIGDBHandler
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.route(route="igdb/extract")
 def igdb_extract_function(req: func.HttpRequest) -> func.HttpResponse:
