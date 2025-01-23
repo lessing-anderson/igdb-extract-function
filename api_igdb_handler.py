@@ -53,62 +53,50 @@ class ApiIGDBHandler:
                     logging.info("Número máximo de tentativas atingido. Falha na operação.")
                     raise
     
-    def save_data_tmp(self, sufix, exec_uuid, data):
+    def save_data_tmp(self, sufix, exec_uuid, data, file_name):
 
-        name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S.%f")
-
-        logging.info(f'Salvando em /tmp/{sufix}/{exec_uuid}/{name}.json')
+        logging.info(f'Salvando em /tmp/{sufix}/{exec_uuid}/{file_name}.json')
 
         os.makedirs(f'/tmp/{sufix}/{exec_uuid}', exist_ok=True)
-        with open(f'/tmp/{sufix}/{exec_uuid}/{name}.json', 'w') as open_file:
+        with open(f'/tmp/{sufix}/{exec_uuid}/{file_name}.json', 'w') as open_file:
             json.dump(data, open_file)
         return True
 
-    def get_and_save_tmp(self, sufix, exec_uuid, body):
+    def get_and_save_tmp(self, sufix, exec_uuid, body, file_name):
         data = self.get_data(sufix, body)
-        self.save_data_tmp(sufix, exec_uuid, data)
+        self.save_data_tmp(sufix, exec_uuid, data, file_name)
         return data
 
-    def process(self, sufix, exec_uuid, extract_type, delta_days=1):
-        offset = 0
+    def process(self, sufix, exec_uuid, extract_type, delta_days=1, offset=0, file_name = None):
 
         if extract_type == 'full':
-            logging.info("Iniciando loop extração full...")
-            while True:
-            
-                body = f"""fields *;
-                    limit 500;
-                    offset {offset};
-                    sort updated_at asc;"""
-                logging.info("Obtendo dados...")
-                data = self.get_and_save_tmp(sufix, exec_uuid, body)
+            body = f"""fields *;
+                limit 500;
+                offset {offset};
+                sort updated_at asc;"""
 
-                if len(data) < 500:
-                    logging.info("Finalizando loop... ")
-                    return True
+            data = self.get_and_save_tmp(sufix, exec_uuid, body, file_name)
 
-                logging.info("+500 loop...")
-                offset += 500
+            if len(data) < 500:
+                return False
+            else:
+                return True
 
         elif extract_type == 'delta':
             delta_timestamp = datetime.datetime.now() - datetime.timedelta(days=delta_days)
             delta_timestamp = int(delta_timestamp.timestamp())
-
-            logging.info(f"Iniciando loop extração delta de {delta_days} dias...")
-            while True:
             
-                body = f"""fields *;
-                    limit 500;
-                    offset {offset};
-                    where updated_at >= {delta_timestamp};
-                    sort updated_at asc;"""
-                logging.info("Obtendo dados...")
-                data = self.get_and_save_tmp(sufix, exec_uuid, body)
+            body = f"""fields *;
+                limit 500;
+                offset {offset};
+                where updated_at >= {delta_timestamp};
+                sort updated_at asc;"""
+            logging.info("Obtendo dados...")
+            data = self.get_and_save_tmp(sufix, exec_uuid, body, file_name)
 
-                if len(data) < 500:
-                    logging.info("Finalizando loop... ")
-                    return True
+            if len(data) < 500:
+                return False
+            else:
+                return True
 
-                logging.info("+500 loop...")
-                offset += 500
 
